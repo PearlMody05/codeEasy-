@@ -9,7 +9,7 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": ["onCommand:extension.editCode"],
   "main": "./extension.js",
   
     "contributes": {
@@ -17,6 +17,10 @@
         {
             "command": "codeeasy.openSidebar",
             "title": "Code Generator"
+        },
+        {
+          "command": "codeeasy.editCode",
+          "title": "Code Editor"
         }
     ],
     "viewsContainers": {
@@ -43,6 +47,13 @@
                 "command": "codeeasy.openSidebar",
                 "when": "view == codeGeneratorView"
             }
+        ],
+        "editor/context": [
+          {
+            "command": "codeeasy.editCode",
+            "when": "editorHasSelection",
+            "group": "navigation"
+          }
         ]
     }
 },
