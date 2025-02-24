@@ -2,60 +2,90 @@
 const vscode = require('vscode');
 const path = require('path');
 const generate = require('./generate');
+const Parser = require("tree-sitter");
+const parser = new Parser();
+const Javascript = require('tree-sitter-javascript');
+const C = require("tree-sitter-c");
+const Python = require("tree-sitter-python");
+
+const languageMap = {
+    javascript: Javascript,
+    c: C,
+    python: Python,
+};
+
+
+function setLang(editor) {
+    if (!editor) return;
+    const languageId = editor.document.languageId;
+    const lang = languageMap[languageId];
+    if (lang) {
+        parser.setLanguage(lang);
+        console.log(`Language set to: ${languageId}`);
+    } else {
+        console.error(`Unsupported language: ${languageId}`);
+    }
+}
+
+//tree create
+function parseCode(editor) {
+    if (!editor) return;
+    const code = editor.document.getText();
+    const tree = parser.parse(code);
+    console.log("Syntax Tree:", tree.rootNode.toString());
+}
+
+
+class CodeGeneratorViewProvider {
+    constructor(context) {
+        this.context = context;
+    }
+
+    resolveWebviewView(webviewView) {
+        this.webviewView = webviewView;
+        webviewView.webview.options = {
+            enableScripts: true,
+            localResourceRoots: [vscode.Uri.file(path.join(this.context.extensionPath, 'media'))]
+        };
+
+        const htmlPath = path.join(this.context.extensionPath, 'media', 'pannel.html');
+        webviewView.webview.html = require('fs').readFileSync(htmlPath, 'utf8');
+
+        webviewView.webview.onDidReceiveMessage(async (message) => {
+            if (message.command === 'generate') {
+                let editor = vscode.window.activeTextEditor;
+                if (!editor) {
+                    vscode.window.showErrorMessage('No active editor! Open a file first.');
+                    return;
+                }
+
+                setLang(editor);
+                parseCode(editor);
+
+                const generatedCode = await generate.handleCodeGeneration(message.text, editor);
+                if (generatedCode) {
+                    await generate.insertGeneratedCode(editor, generatedCode);
+                    webviewView.webview.postMessage({ command: 'generated' });
+                }
+            }
+        });
+    }
+}
+
 
 function activate(context) {
-    let panel;
+    // Register the sidebar webview provider
+    const provider = new CodeGeneratorViewProvider(context);
+    context.subscriptions.push(
+        vscode.window.registerWebviewViewProvider('codeGeneratorView', provider)
+    );
 
-    const disposable = vscode.commands.registerCommand('codeeasy.generateCode', () => {
-        if (!panel) {
-            panel = vscode.window.createWebviewPanel(
-                'codeGenerator',
-                'Code Generator',
-                vscode.ViewColumn.Beside, // Always open beside the editor
-                {
-                    enableScripts: true,
-                    retainContextWhenHidden: true, // Keeps the panel open
-                    localResourceRoots: [vscode.Uri.file(path.join(context.extensionPath, 'media'))]
-                }
-            );
-
-            const htmlPath = path.join(context.extensionPath, 'media', 'pannel.html');
-            panel.webview.html = require('fs').readFileSync(htmlPath, 'utf8');
-
-            panel.webview.onDidReceiveMessage(async (message) => {
-                if (message.command === 'generate') {
-                    let editor = vscode.window.activeTextEditor;
-
-                    // Ensure an active editor is available
-                    if (!editor) {
-                        const visibleEditors = vscode.window.visibleTextEditors;
-                        if (visibleEditors.length > 0) {
-                            editor = visibleEditors[0];
-                            await vscode.window.showTextDocument(editor.document, vscode.ViewColumn.One);
-                        }
-                    }
-
-                    if (!editor) {
-                        vscode.window.showErrorMessage('No active editor! Please open a file and try again.');
-                        return;
-                    }
-
-                    const generatedCode = await generate.handleCodeGeneration(message.text, editor);
-
-                    if (generatedCode) {
-                        await generate.insertGeneratedCode(editor, generatedCode);
-                        panel.webview.postMessage({ command: 'generated' });
-                    }
-                }
-            });
-
-            panel.onDidDispose(() => panel = null, null, context.subscriptions);
-        } else {
-            panel.reveal(vscode.ViewColumn.Beside);
-        }
+    // Command to open the sidebar
+    const openSidebarCommand = vscode.commands.registerCommand('codeeasy.openSidebar', () => {
+        vscode.commands.executeCommand("workbench.view.extension.codeGeneratorSidebar");
     });
 
-    context.subscriptions.push(disposable);
+    context.subscriptions.push(openSidebarCommand);
 }
 
 function deactivate() {}
