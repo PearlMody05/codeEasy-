@@ -1,45 +1,11 @@
-//mport GeminiService from './GeminiService';
 
 // @ts-nocheck
 const vscode = require('vscode');
 const path = require('path');
 const generate = require('./generate');
-//const Parser = require("tree-sitter");
-// const parser = new Parser();
-// const Javascript = require('tree-sitter-javascript');
-// const C = require("tree-sitter-c");
-// const Python = require("tree-sitter-python");
-const fs = require("fs");
 const geminis = require('./GeminiService');
 const { exec } = require('child_process');
-
-// const languageMap = {
-//     javascript: Javascript,
-//     c: C,
-//     python: Python,
-// };
-
-
-// function setLang(editor) {
-//     if (!editor) return;
-//     const languageId = editor.document.languageId;
-//     const lang = languageMap[languageId];
-//     if (lang) {
-//         parser.setLanguage(lang);
-//         console.log(`Language set to: ${languageId}`);
-//     } else {
-//         console.error(`Unsupported language: ${languageId}`);
-//     }
-// }
-
-// //tree create
-// function parseCode(editor) {
-//     if (!editor) return;
-//     const code = editor.document.getText();
-//     const tree = parser.parse(code);
-//     console.log("Syntax Tree:", tree.rootNode.toString());
-// }
-
+const fs = require('fs');
 
 class CodeGeneratorViewProvider {
     constructor(context) {
@@ -64,9 +30,6 @@ class CodeGeneratorViewProvider {
                     return;
                 }
 
-                //setLang(editor);
-                //parseCode(editor);
-
                 const generatedCode = await generate.handleCodeGeneration(message.text, editor);
                 if (generatedCode) {
                     await generate.insertGeneratedCode(editor, generatedCode);
@@ -77,13 +40,10 @@ class CodeGeneratorViewProvider {
     }
 }
 
-
 function activate(context) {
-    // Register the sidebar webview provider
+
     const provider = new CodeGeneratorViewProvider(context);
-    context.subscriptions.push(
-        vscode.window.registerWebviewViewProvider('codeGeneratorView', provider)
-    );
+    
 
     // Command to open the sidebar
     const openSidebarCommand = vscode.commands.registerCommand('codeeasy.openSidebar', () => {
@@ -168,9 +128,8 @@ function activate(context) {
         });
     });
 
-    //command fixes bugs directly
+    //command to fixes bugs 
     const fixBugs = vscode.commands.registerCommand('codeeasy.fixbugs', async () => {
-        console.log("edit");
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
             vscode.window.showWarningMessage("No active editor");
@@ -300,6 +259,7 @@ function runPytest(testFilePath) {
     context.subscriptions.push(editCode);
     context.subscriptions.push(fixBugs);
     context.subscriptions.push(generateTestCase);
+    context.subscriptions.push(vscode.window.registerWebviewViewProvider('codeGeneratorView', provider));
 }
 
 function deactivate() {}

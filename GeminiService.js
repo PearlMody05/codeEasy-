@@ -67,6 +67,7 @@ class GeminiService {
             throw new Error(`Gemini API Error: ${error.message}`);
         }
     }
+
     generateCodePrompt(userPrompt, context) {
         // Validating the context
         if (!context || !context.language || !context.fileType) {
@@ -150,7 +151,6 @@ class GeminiService {
         `;
     }
     
-
     editorPrompt(userPrompt, context) {
         //schema for the expected response format
         const schema = {
@@ -224,6 +224,7 @@ class GeminiService {
       Now, **ONLY** return the JSON object, without extra text or formatting.
       `;
       }
+
     async editCode(prompt, context) {
         const structuredPrompt = this.editorPrompt(prompt, context);
         try {
@@ -250,7 +251,6 @@ class GeminiService {
             throw new Error(`Gemini API Error: ${error.message}`);
         }
     }
-
 
     testCodePrompt(userPrompt, context) {
         // Validating the context

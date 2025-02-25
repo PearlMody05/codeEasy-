@@ -1,20 +1,22 @@
 # codeEasy README
 
-"codeEasy" is the perfect VS Code extension to amplify your coding experience. Whether you're writing new code or debugging existing ones, CodeEasy gets it right. Just type a prompt, and it generates the correct code directly in your IDE. Plus, its smart debugging features help you catch and fix errors effortlessly. Code writing becomes easy with CodeEasy!
+**codeEasy** is the perfect VS Code extension to amplify your coding experience. Whether you're writing new code or debugging existing ones, CodeEasy gets it right. Just type a prompt, and it generates the correct code directly in your IDE. Plus, its smart debugging features help you catch and fix errors effortlessly. Code writing becomes easy with CodeEasy!
 
 ## Features
+- **Code Generation:** codeEasy instantly generates completes, functional code based on a simple user prompt, saving time on repetitive tasks.
+- **Display in VS Code:** The extension integrates seamlessly with Visual Studio Code, displaying generated code directly on vs code eliminating the need to switch between tabs or external tools.
+- **Automated Bug Fixes** codeEasy automatically fixes bugs directly on your IDE by just right click. 
+- **Itelligent Code Editor** Users can edit the code based on prompt directly on vs code .
+- **Test Case Generation** codeEasy automatically creates unique and relevant test cases tailored to the code in the files and organizes.results within a dedicated test folder.
+- **Automatic testing Cases** Runs all generated test cases instantly.
+- **Efficient Code Refinement** Before making edits, CodeEasy suggests changes and asks for user approval, ensuring full control over modifications.
+## Usage
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+To use codeEasy, follow these steps:
 
-For example if there is an image subfolder under your extension project workspace:
-
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
-
-## Requirements
-
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+1. Open Visual Studio Code.
+2. Click on the codeEasy button in the activity bar for prompt based code generation
+3. Select lines of code which you want to edit or enhance and right click them 
 
 ## Extension Settings
 
@@ -27,25 +29,19 @@ This extension contributes the following settings:
 * `myExtension.enable`: Enable/disable this extension.
 * `myExtension.thing`: Set to `blah` to do something.
 
-## Known Issues
+## Commands
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+This extension provides the following commands:
+
+- **Code Generator (`codeeasy.openSidebar`)** – Opens the sidebar for prompt based quick code generation.
+- **Code Editor (`codeeasy.editCode`)** – automatically edits the code based on prompt.
+- **Generate Test Cases (`codeeasy.generateTestCases`)** – Automatically generates test cases for your code and runs them on the terminal.
+- **Fix Bugs (`codeeasy.fixbugs`)** – Fixes Bugs if present in selected lines of texts.
 
 ## Release Notes
-
-Users appreciate release notes as you update your extension.
-
 ### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
+- Initial release of CodeEasy.
+- Features: Code Generator, Code Editor, Test Case Generation, Bug Fixing.
 
 ---
 
