@@ -20,11 +20,15 @@
         },
         {
           "command": "codeeasy.editCode",
-          "title": "Code Editor"
+          "title": "Code Editor (codeEasy)"
+        },
+        {
+          "command": "codeeasy.generateTestCases",
+          "title": "Generate Test Cases (codeEasy)"
         },
         {
           "command": "codeeasy.fixbugs",
-          "title": "Fix Bugs"
+          "title": "Fix Bugs (codeEasy)"
         }
     ],
     "viewsContainers": {
@@ -61,6 +65,11 @@
           {
             "command": "codeeasy.fixbugs",
             "when": "editorHasSelection",
+            "group": "navigation"
+          },
+          {
+            "command": "codeeasy.generateTestCases",
+            "when": "editorLangId == python",
             "group": "navigation"
           }
         ]

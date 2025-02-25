@@ -35,6 +35,8 @@ class GeminiService {
         const cleanedText = text.replace(/```json\n?|```/g, "").trim(); // Remove markdown code blocks
         return cleanedText;
     }
+
+
     async generateCode(prompt, context) {
         const structuredPrompt = this.generateCodePrompt(prompt, context);
         try {
@@ -65,7 +67,6 @@ class GeminiService {
             throw new Error(`Gemini API Error: ${error.message}`);
         }
     }
-
     generateCodePrompt(userPrompt, context) {
         // Validating the context
         if (!context || !context.language || !context.fileType) {
@@ -149,6 +150,7 @@ class GeminiService {
         `;
     }
     
+
     editorPrompt(userPrompt, context) {
         //schema for the expected response format
         const schema = {
@@ -222,8 +224,6 @@ class GeminiService {
       Now, **ONLY** return the JSON object, without extra text or formatting.
       `;
       }
-    
-    
     async editCode(prompt, context) {
         const structuredPrompt = this.editorPrompt(prompt, context);
         try {
@@ -246,6 +246,106 @@ class GeminiService {
             const explanation = jsonResponse.explanation;
     
             return { correct_code: correctCode, explanation: explanation };
+        } catch (error) {
+            throw new Error(`Gemini API Error: ${error.message}`);
+        }
+    }
+
+
+    testCodePrompt(userPrompt, context) {
+        // Validating the context
+        if (!context || !context.language || !context.fileType) {
+            throw new Error("Invalid context: 'language' and 'fileType' are required.");
+        }
+    
+        // Define schema
+        const testcodeSchema = {
+            type: "object",
+            properties: {
+                fileName: {
+                    type: "string",
+                    description: "name the file as per functionality it is testing and specify its a test file",
+                },
+                importsRqd: {
+                    type: "string",
+                    description: "Required imports for the test cases (e.g., pytest, modules to test).",
+                },
+                testCases: {
+                    type: "string",
+                    description: "Clear, well-structured, and accurate test cases based on pytest for the given user prompt.",
+                },
+                expectedOutputs: {
+                    type: "string",
+                    description: "Expected outputs or assertions for the test cases.",
+                },
+            },
+            required: ["fileName", "importsRqd", "testCases", "expectedOutputs"]
+        };
+    
+        // Convert schema to JSON string
+        const schema = JSON.stringify(testcodeSchema, null, 2);
+    
+        // Generate prompt
+        return `
+        You are an expert software developer. Generate pytest-based test cases based on the following:
+    
+        === CONTEXT ===
+        - Programming Language: ${context.language}
+        - File Type: ${context.fileType}
+        - Current File Content: ${context.currentFileContent || 'None'}
+    
+        === USER REQUEST ===
+        ${userPrompt}
+    
+        === RESPONSE FORMAT ===
+        Respond with a JSON object containing the following (STRICTLY JSON):
+        \`\`\`json
+        ${schema}
+        \`\`\`
+        === REQUIREMENTS ===
+        1. The test cases must be accurate and based strictly on the user prompt.
+        2. Include all necessary imports (e.g., pytest, modules to test).
+        3. Write clear and descriptive test cases with proper assertions.
+        4. Ensure the test cases are production-ready and follow best practices.
+        5. Only return the JSON object—no explanations or comments.
+    
+        Be very sure and only generate the strictly JSON response now:
+        `;
+    }
+    async testCode(prompt, context) {
+        const structuredPrompt = this.testCodePrompt(prompt, context);
+        try {
+            let cleanedText = await this.chatGemini(prompt, context, structuredPrompt);
+    
+            // Parse the JSON response safely
+            let jsonResponse;
+            try {
+                jsonResponse = JSON.parse(cleanedText);
+            } catch (jsonError) {
+                throw new Error(`Gemini API returned invalid JSON: ${jsonError.message}`);
+            }
+            console.log("json: ",jsonResponse);
+            const importsRqd = jsonResponse.importsRqd;
+            const  testCases= jsonResponse.testCases;
+            const  fileName= jsonResponse.fileName;
+            //const expectedOutputs = jsonResponse.expectedOutputs;
+            console.log("testCases",testCases);
+            if(!testCases){
+                return 0;
+            }
+            const startImport = `import sys
+import os
+
+# Get the parent directory of the current file
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+# Add parent directory to sys.path
+sys.path.append(parent_dir)`;
+            const filecontent = startImport+"\n"+importsRqd +"\n"+testCases;
+            await createFile(fileName,"test",filecontent);
+            console.log("file created")
+    
+            return 1;
         } catch (error) {
             throw new Error(`Gemini API Error: ${error.message}`);
         }

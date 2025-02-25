@@ -21,7 +21,10 @@ async function createNewFile(fileName, directory,code) {
         const workspacePath = workspaceFolders[0].uri.fsPath;
         const targetDirectory = directory ? path.join(workspacePath, directory) : workspacePath;
         const filePath = path.join(targetDirectory, fileName);
-
+        if (!fs.existsSync(targetDirectory)) {
+            fs.mkdirSync(targetDirectory, { recursive: true });
+        }
+        
         // Create the file (empty file)
         if(code != null) fs.writeFileSync(filePath, code);
         else fs.writeFileSync(filePath, '');

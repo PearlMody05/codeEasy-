@@ -1,3 +1,5 @@
+//mport GeminiService from './GeminiService';
+
 // @ts-nocheck
 const vscode = require('vscode');
 const path = require('path');
@@ -8,7 +10,9 @@ const generate = require('./generate');
 // const C = require("tree-sitter-c");
 // const Python = require("tree-sitter-python");
 const fs = require("fs");
-const geminis = require('./GeminiService')
+const geminis = require('./GeminiService');
+const { exec } = require('child_process');
+
 // const languageMap = {
 //     javascript: Javascript,
 //     c: C,
@@ -88,7 +92,6 @@ function activate(context) {
 
     //command to edit code based on selection
     const editCode = vscode.commands.registerCommand('codeeasy.editCode', async () => {
-        console.log("edit");
         const editor = vscode.window.activeTextEditor;
         if (!editor) {
             vscode.window.showWarningMessage("No active editor");
@@ -234,11 +237,69 @@ function activate(context) {
             }
         });
     });
+
+    //command to generate test cases and test code automatically
+    const generateTestCase = vscode.commands.registerCommand('codeeasy.generateTestCases', async () => {
+        try{const editor = vscode.window.activeTextEditor;
+        if (!editor) {
+            vscode.window.showWarningMessage("No active editor");
+            return;
+        }
+        const document = editor.document;
+        if (document.languageId !== "python") {
+            vscode.window.showErrorMessage("This feature is only available for Python files.");
+            return;
+        }
+        const fileContent = await document.getText(); 
+        const context = {
+            language: editor.document.languageId,
+            fileType: path.extname(editor.document.fileName),
+            currentFileContent:fileContent ,
+        };
+        const loc = editor.document.uri.fsPath;
+        vscode.window.showInformationMessage("Test case generation started...");
+        const gemini = new geminis(); //object of gemini service class
+        let prompt = "file location is "+loc+" and code is \n"+fileContent;
+        const success = await gemini.testCode(prompt,context);
+        if(success==1){
+            vscode.window.showInformationMessage("testing it..");
+            let testFilePath = vscode.window.activeTextEditor.document.uri.fsPath;
+            exec("pytest --version", (error, stdout, stderr) => {
+                if (error) {
+                    vscode.window.showWarningMessage("pytest not found. Installing pytest...");
+                    exec("pip install pytest", (installErr, installOut, installErrOut) => {
+                        if (installErr) {
+                            vscode.window.showErrorMessage("Failed to install pytest.");
+                            return;
+                        }
+                        vscode.window.showInformationMessage("pytest installed successfully.");
+                        runPytest(testFilePath);
+                    });
+                } else {
+                    runPytest(testFilePath);
+                }
+            });
+        }
+        if (success==0) {
+            vscode.window.showErrorMessage("Test case generation failed.");
+        }
+        
+}catch(err){
+    console.log(err);
+}
+function runPytest(testFilePath) {
+    const terminal = vscode.window.createTerminal("Pytest Terminal");
+    terminal.show();
+    terminal.sendText(`pytest "${testFilePath}"`);
+}
+        
+    });
         
 
     context.subscriptions.push(openSidebarCommand);
     context.subscriptions.push(editCode);
     context.subscriptions.push(fixBugs);
+    context.subscriptions.push(generateTestCase);
 }
 
 function deactivate() {}
