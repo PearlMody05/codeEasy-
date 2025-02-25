@@ -1,4 +1,4 @@
-# codeeasy README
+# codeEasy README
 
 "codeEasy" is the perfect VS Code extension to amplify your coding experience. Whether you're writing new code or debugging existing ones, CodeEasy gets it right. Just type a prompt, and it generates the correct code directly in your IDE. Plus, its smart debugging features help you catch and fix errors effortlessly. Code writing becomes easy with CodeEasy!
 
