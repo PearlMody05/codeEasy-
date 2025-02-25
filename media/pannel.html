@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Generator</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px }
+        input, button { width: 100%; padding: 10px; margin-top: 10px; }
+        button {
+            width:51%;
+            background-color:#0078D4;
+            color: white;
+            font-weight:50%;
+            cursor: pointer;
+        }
+        .centre{
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <h2>Code Generator</h2>
+    <div class="centre"><input type="text" id="codeInput" placeholder="Describe the code...">
+    <button onclick="sendMessage()">Generate</button>
+    </div>
+
+    <p id="status"></p>
+
+    <script>
+        const vscode = acquireVsCodeApi();
+        
+        function sendMessage() {
+            const input = document.getElementById('codeInput').value;
+            if (input.trim() === "") return;
+
+            document.getElementById('status').innerText = "Generating code...";
+            vscode.postMessage({ command: 'generate', text: input });
+        }
+
+        window.addEventListener('message', event => {
+            const message = event.data;
+            if (message.command === 'generated') {
+                document.getElementById('status').innerText = "Code inserted!";
+            }
+        });
+    </script>
+</body>
+</html>
