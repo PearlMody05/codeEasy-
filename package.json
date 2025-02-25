@@ -21,6 +21,10 @@
         {
           "command": "codeeasy.editCode",
           "title": "Code Editor"
+        },
+        {
+          "command": "codeeasy.fixbugs",
+          "title": "Fix Bugs"
         }
     ],
     "viewsContainers": {
@@ -51,6 +55,11 @@
         "editor/context": [
           {
             "command": "codeeasy.editCode",
+            "when": "editorHasSelection",
+            "group": "navigation"
+          },
+          {
+            "command": "codeeasy.fixbugs",
             "when": "editorHasSelection",
             "group": "navigation"
           }

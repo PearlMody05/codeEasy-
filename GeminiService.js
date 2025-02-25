@@ -96,41 +96,79 @@ class GeminiService {
         return text.replace(/```[\w]*\n?/, '').replace(/```$/, '').trim();
     }
     editorPrompt(userPrompt, context) {
+        // Define the schema for the expected response format
+        const schema = {
+          type: "object",
+          properties: {
+            correct_code: {
+              type: "string",
+              description: "Updated and correct version of the code",
+            },
+            explanation: {
+              type: "array",
+              description: "List of improvements made",
+              items: {
+                type: "string",
+              },
+            },
+          },
+          required: ["correct_code", "explanation"],
+        };
+      
+        // Convert schema to a JSON Schema format string for the prompt
+        const schemaString = JSON.stringify(schema, null, 2);
+      
+        // Construct the prompt template
         return `
-        You are an expert software engineer and code reviewer. Your job is to analyze the given code, identify errors (if any), and improve its quality based on the user’s request.
+      You are an **expert software engineer and code reviewer**. Your task is to analyze the given code and improve it **strictly based on the user's request**.
+      
+      ### **Context:**
+      - **Programming Language:** ${context.language}
+      - **File Type:** ${context.fileType}
+      - **Current Code:**
+      \`\`\`${context.language}
+      ${context.currentFileContent || 'None'}
+      \`\`\`
+      
+      ### **User Request:**
+      \`\`\`
+      ${userPrompt}
+      \`\`\`
+      
+      ### **Response Schema:**
+      Your response must strictly conform to this JSON schema:
+      
+      \`\`\`json
+      ${schemaString}
+      \`\`\`
+      
+      ### **Instructions:**
+      - **If the code has errors**, fix them to ensure it runs correctly.
+      - **If the code is inefficient**, refactor it while keeping functionality unchanged.
+      - **Only modify what is necessary** based on the user request.
+      - **DO NOT** include any explanations, greetings, or extra text outside of JSON format.
+      
+      ### **Example Response Format:**
+      \`\`\`json
+      {
+        "correct_code": "function example() { return 'fixed code'; }",
+        "explanation": [
+          "Fixed syntax error in function declaration",
+          "Improved return statement formatting",
+          "Added missing semicolon"
+        ]
+      }
+      \`\`\`
+      
+      ### **Important Rules:**
+      1. **Strictly return valid JSON** matching the provided schema.
+      2. **No additional text, comments, or greetings.**
+      3. If no changes are needed, return the original code inside \`correct_code\` and explain why.
+      
+      Now, **ONLY** return the JSON object, without extra text or formatting.
+      `;
+      }
     
-        ### Context:
-        - **Programming Language:** ${context.language}
-        - **File Type:** ${context.fileType}
-        - **Current File Content:** ${context.currentFileContent || 'None'}
-    
-        ### User Request:
-        - ${userPrompt}
-    
-        ### Instructions:
-        - Analyze the provided code for **errors, inefficiencies, or areas of improvement**.
-        - If the code has errors, **fix them** and ensure it runs correctly.
-        - If the code is correct but can be improved, **refactor it** for better readability and efficiency.
-        - Maintain the **original functionality** while making improvements.
-    
-        ### Output Format (Strict JSON):
-        {
-          "correct_code": "Updated and correct version of the code.",
-          "explanation": [
-            "Bullet-point explanation of the changes made.",
-            "Mention if errors were fixed or improvements were made.",
-            "Explain why changes were necessary."
-          ]
-        }
-    
-        **Rules:**
-        1. Keep the explanations concise, **formatted as bullet points**.
-        2. Do **not** change the core logic unless explicitly requested.
-        3. Do **not** include any text outside of the JSON response.
-    
-        Now, strictly generate the JSON response as per the format above.
-        `;
-    }
     
     async editCode(prompt, context) {
         const structuredPrompt = this.editorPrompt(prompt, context);
