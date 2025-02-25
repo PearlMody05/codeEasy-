@@ -2,39 +2,39 @@
 const vscode = require('vscode');
 const path = require('path');
 const generate = require('./generate');
-const Parser = require("tree-sitter");
-const parser = new Parser();
-const Javascript = require('tree-sitter-javascript');
-const C = require("tree-sitter-c");
-const Python = require("tree-sitter-python");
+//const Parser = require("tree-sitter");
+// const parser = new Parser();
+// const Javascript = require('tree-sitter-javascript');
+// const C = require("tree-sitter-c");
+// const Python = require("tree-sitter-python");
 const fs = require("fs");
 const geminis = require('./GeminiService')
-const languageMap = {
-    javascript: Javascript,
-    c: C,
-    python: Python,
-};
+// const languageMap = {
+//     javascript: Javascript,
+//     c: C,
+//     python: Python,
+// };
 
 
-function setLang(editor) {
-    if (!editor) return;
-    const languageId = editor.document.languageId;
-    const lang = languageMap[languageId];
-    if (lang) {
-        parser.setLanguage(lang);
-        console.log(`Language set to: ${languageId}`);
-    } else {
-        console.error(`Unsupported language: ${languageId}`);
-    }
-}
+// function setLang(editor) {
+//     if (!editor) return;
+//     const languageId = editor.document.languageId;
+//     const lang = languageMap[languageId];
+//     if (lang) {
+//         parser.setLanguage(lang);
+//         console.log(`Language set to: ${languageId}`);
+//     } else {
+//         console.error(`Unsupported language: ${languageId}`);
+//     }
+// }
 
-//tree create
-function parseCode(editor) {
-    if (!editor) return;
-    const code = editor.document.getText();
-    const tree = parser.parse(code);
-    console.log("Syntax Tree:", tree.rootNode.toString());
-}
+// //tree create
+// function parseCode(editor) {
+//     if (!editor) return;
+//     const code = editor.document.getText();
+//     const tree = parser.parse(code);
+//     console.log("Syntax Tree:", tree.rootNode.toString());
+// }
 
 
 class CodeGeneratorViewProvider {
@@ -60,8 +60,8 @@ class CodeGeneratorViewProvider {
                     return;
                 }
 
-                setLang(editor);
-                parseCode(editor);
+                //setLang(editor);
+                //parseCode(editor);
 
                 const generatedCode = await generate.handleCodeGeneration(message.text, editor);
                 if (generatedCode) {

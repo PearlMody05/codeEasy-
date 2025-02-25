@@ -36,7 +36,7 @@ class GeminiService {
         return cleanedText;
     }
     async generateCode(prompt, context) {
-        const structuredPrompt = this.generatecodePromptt(prompt, context);
+        const structuredPrompt = this.generateCodePrompt(prompt, context);
         try {
            let cleanedText= await this.chatGemini(prompt,context,structuredPrompt)
             // Parse the JSON response
@@ -50,53 +50,107 @@ class GeminiService {
             
             jsonResponse = JSON.parse(cleanedText);
             const requird = jsonResponse.file_required;
-            const fname = jsonResponse.fileName || null;
-            const code= this.formatResponse(jsonResponse.code);
-            
+            const fnames = jsonResponse.fileNames ;
+            const codes= jsonResponse.codes;
+            const n = jsonResponse.numFiles;
             if (requird==="YES"){
-                if(fname){
-                    await createFile(fname,null,code)
+                for(let i =0; i<n; i++)
+                {
+                    await createFile(fnames[i],null,codes[i])
                 }
             }
-            return code;
+            return codes[0];
            
         } catch (error) {
             throw new Error(`Gemini API Error: ${error.message}`);
         }
     }
 
-    generatecodePromptt(userPrompt, context) {
+    generateCodePrompt(userPrompt, context) {
+        // Validating the context
+        if (!context || !context.language || !context.fileType) {
+            throw new Error("Invalid context: 'language' and 'fileType' are required.");
+        }
+    
+        // Define schema
+        const gencodeSchema = {
+            type: "object",
+            properties: {
+                file_required: {
+                    type: "string",
+                    enum: ["YES", "NO"],
+                    description: '"YES" if a new file is needed, otherwise "NO"',
+                },
+                fileNames: {
+                    type: "array",
+                    description: 'The name of the new file if "file_required" is "YES". Omit this field if "file_required" is "NO".',
+                    items: {
+                        type: "string",
+                    },
+                },
+                numFiles: {
+                    type: "integer",
+                    default: 0,
+                    description: 'The number of new files required to be created . if "file_required" is "YES". Omit this field if "file_required" is "NO".',
+                },
+                codes: {
+                    type: "array",
+                    description: "List of required code snippets. If numFiles is more than 1, each file's code should be in a separate array entry, in the order of the files.",
+                    items: {
+                        type: "string",
+                    },
+                    minItems: 1,
+                },
+            },
+            required: ["file_required", "codes"],
+            if: {
+                properties: {
+                    file_required: { const: "YES" },
+                },
+            },
+            then: {
+                required: ["fileNames", "numFiles"],
+            },
+        };
+    
+        // Convert schema to JSON string
+        const schema = JSON.stringify(gencodeSchema, null, 2);
+    
+        // Generate prompt
         return `
         You are an expert programmer. Generate code based on the following:
-        
-        Context:
+    
+        === CONTEXT ===
         - Programming Language: ${context.language}
         - File Type: ${context.fileType}
         - Current File Content: ${context.currentFileContent || 'None'}
-        
-        User Request: ${userPrompt}
-        
-        Respond with a JSON object containing the following(STRICTLY JSON):
-        1. "file_required": "YES" if a new file is needed, otherwise "NO".
-        2. "fileName": The name of the new file if "file_required" is "YES". Omit this field if "file_required" is "NO".
-        3. "code": The generated code implementation.
-        
-        Requirements:
-        1. Generate only the code implementation
-        2. Ensure the code follows best practices
-        3. Include necessary imports/requires
-        4. Make the code production-ready
-        5. Only return the JSON object, no explanations or comments
-        6.Do **not** include any text outside of the JSON response.
-        Be very sure and only Generate the strictly JSON response now:`;
+    
+        === USER REQUEST ===
+        ${userPrompt}
+    
+        === RESPONSE FORMAT ===
+        Respond with a JSON object containing the following (STRICTLY JSON):
+        \`\`\`json
+        ${schema}
+        \`\`\`
+    
+        === REQUIREMENTS ===
+        1. Generate only the code implementation.
+        2.Figure out the number of files needed based on number of files to be created, as mentioned by the user
+        3.when creating new file: If the file name is not specified by the user, name the file with the most sutiable name based on functionality
+        4. Ensure the code follows best practices.
+        5. Include necessary imports/requires.
+        6. Make the code production-ready.
+        7. Only return the JSON object—no explanations or comments.
+        8. Do **not** include any text outside of the JSON response.
+        9. file_required is **"YES"** only when the user mentions to create a file
+    
+        Be very sure and only generate the strictly JSON response now:
+        `;
     }
-    formatResponse(text) {
-        // Clean up the response to extract only the code
-        // Remove any markdown code block syntax if present
-        return text.replace(/```[\w]*\n?/, '').replace(/```$/, '').trim();
-    }
+    
     editorPrompt(userPrompt, context) {
-        // Define the schema for the expected response format
+        //schema for the expected response format
         const schema = {
           type: "object",
           properties: {
@@ -188,7 +242,7 @@ class GeminiService {
                 throw new Error("Gemini API response is missing required fields (correct_code or explanation).");
             }
     
-            const correctCode = this.formatResponse(jsonResponse.correct_code);
+            const correctCode = jsonResponse.correct_code;
             const explanation = jsonResponse.explanation;
     
             return { correct_code: correctCode, explanation: explanation };
