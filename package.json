@@ -1,80 +1,86 @@
 {
   "name": "codeeasy",
   "displayName": "codeEasy",
+  "publisher": "PearlMody",
   "description": "It makes your coding journey easy and more productive.",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.97.0"
   },
+  "repository": {
+  "type": "git",
+  "url": "https://github.com/PearlMody05/codeEasy-.git"
+},
   "categories": [
     "Other"
   ],
-  "activationEvents": ["onCommand:extension.editCode"],
+  "activationEvents": [
+    "onCommand:extension.editCode"
+  ],
   "main": "./extension.js",
-  
-    "contributes": {
+  "contributes": {
     "commands": [
+      {
+        "command": "codeeasy.openSidebar",
+        "title": "Code Generator"
+      },
+      {
+        "command": "codeeasy.editCode",
+        "title": "Code Editor (codeEasy)"
+      },
+      {
+        "command": "codeeasy.generateTestCases",
+        "title": "Generate Test Cases (codeEasy)"
+      },
+      {
+        "command": "codeeasy.fixbugs",
+        "title": "Fix Bugs (codeEasy)"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
         {
-            "command": "codeeasy.openSidebar",
-            "title": "Code Generator"
-        },
+          "id": "codeGeneratorSidebar",
+          "title": "Code Generator",
+          "icon": "resources/spark.png"
+        }
+      ]
+    },
+    "views": {
+      "codeGeneratorSidebar": [
+        {
+          "type": "webview",
+          "id": "codeGeneratorView",
+          "name": "Code Generator"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "codeeasy.openSidebar",
+          "when": "view == codeGeneratorView"
+        }
+      ],
+      "editor/context": [
         {
           "command": "codeeasy.editCode",
-          "title": "Code Editor (codeEasy)"
-        },
-        {
-          "command": "codeeasy.generateTestCases",
-          "title": "Generate Test Cases (codeEasy)"
+          "when": "editorHasSelection",
+          "group": "navigation"
         },
         {
           "command": "codeeasy.fixbugs",
-          "title": "Fix Bugs (codeEasy)"
+          "when": "editorHasSelection",
+          "group": "navigation"
+        },
+        {
+          "command": "codeeasy.generateTestCases",
+          "when": "editorLangId == python",
+          "group": "navigation"
         }
-    ],
-    "viewsContainers": {
-        "activitybar": [
-            {
-                "id": "codeGeneratorSidebar",
-                "title": "Code Generator",
-                "icon": "resources/spark.png"
-            }
-        ]
-    },
-    "views": {
-        "codeGeneratorSidebar": [
-            {
-                "type": "webview",
-                "id": "codeGeneratorView",
-                "name": "Code Generator"
-            }
-        ]
-    },
-    "menus": {
-        "view/title": [
-            {
-                "command": "codeeasy.openSidebar",
-                "when": "view == codeGeneratorView"
-            }
-        ],
-        "editor/context": [
-          {
-            "command": "codeeasy.editCode",
-            "when": "editorHasSelection",
-            "group": "navigation"
-          },
-          {
-            "command": "codeeasy.fixbugs",
-            "when": "editorHasSelection",
-            "group": "navigation"
-          },
-          {
-            "command": "codeeasy.generateTestCases",
-            "when": "editorLangId == python",
-            "group": "navigation"
-          }
-        ]
+      ]
     }
-},
+  },
   "scripts": {
     "lint": "eslint .",
     "pretest": "npm run lint",
@@ -90,10 +96,6 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.22.0",
-    "dotenv": "^16.4.7",
-    "tree-sitter": "^0.22.4",
-    "tree-sitter-c": "^0.23.5",
-    "tree-sitter-javascript": "^0.23.1",
-    "tree-sitter-python": "^0.23.6"
+    "dotenv": "^16.4.7"
   }
 }

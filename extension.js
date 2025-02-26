@@ -253,8 +253,7 @@ function runPytest(testFilePath) {
 }
         
     });
-        
-
+    
     context.subscriptions.push(openSidebarCommand);
     context.subscriptions.push(editCode);
     context.subscriptions.push(fixBugs);
