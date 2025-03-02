@@ -9,9 +9,9 @@
     "vscode": "^1.97.0"
   },
   "repository": {
-  "type": "git",
-  "url": "https://github.com/PearlMody05/codeEasy-.git"
-},
+    "type": "git",
+    "url": "https://github.com/PearlMody05/codeEasy-.git"
+  },
   "categories": [
     "Other"
   ],
@@ -42,7 +42,7 @@
       "activitybar": [
         {
           "id": "codeGeneratorSidebar",
-          "title": "Code Generator",
+          "title": "Code Generator (codeEasy)",
           "icon": "resources/spark.png"
         }
       ]
@@ -97,6 +97,7 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.22.0",
-    "dotenv": "^16.4.7"
+    "dotenv": "^16.4.7",
+    "jsonrepair": "^3.12.0"
   }
 }

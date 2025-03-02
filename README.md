@@ -2,6 +2,8 @@
 
 **codeEasy** is the perfect VS Code extension to amplify your coding experience. Whether you're writing new code or debugging existing ones, CodeEasy gets it right. Just type a prompt, and it generates the correct code directly in your IDE. Plus, its smart debugging features help you catch and fix errors effortlessly. Code writing becomes easy with CodeEasy!
 
+## [Video](https://youtu.be/fjBtpM993lM?si=a6nvw5YOPBmvg9b5)
+
 ## Features
 - **Code Generation:** codeEasy instantly generates completes, functional code based on a simple user prompt, saving time on repetitive tasks.
 - **Display in VS Code:** The extension integrates seamlessly with Visual Studio Code, displaying generated code directly on vs code eliminating the need to switch between tabs or external tools.
@@ -16,7 +18,8 @@ To use codeEasy, follow these steps:
 
 1. Open Visual Studio Code.
 2. Click on the codeEasy button in the activity bar for prompt based code generation
-3. Select lines of code which you want to edit or enhance and right click them 
+3. Select lines of code which you want to edit or where there is potential bug.Right click and choose option of Code Editor (codeEasy) to type prompt or Fix Bugs (codeEasy)
+4.To test python api's or anyother code , right click and choose "Generate Test Cases (codeEasy)" 
 
 ## Extension Settings
 

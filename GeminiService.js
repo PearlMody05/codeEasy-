@@ -5,6 +5,7 @@ const dotenv = require('dotenv');
 const path = require('path');
 const fs = require('fs');
 const createFile = require('./createFile')
+const jsonrepair = require("jsonrepair").jsonrepair;
 
 const envPath = path.resolve(__dirname, '.env');
 if (fs.existsSync(envPath)) {
@@ -28,14 +29,42 @@ class GeminiService {
         this.model = this.genAI.getGenerativeModel({ model: "gemini-2.0-flash-thinking-exp-01-21" });
     }
     
-     async chatGemini(prompt,context,structuredPrompt){
+    async chatGemini(prompt, context, structuredPrompt) {
         const result = await this.model.generateContent(structuredPrompt);
         const response = await result.response;
-        const text = response.text();
-        const cleanedText = text.replace(/```json\n?|```/g, "").trim(); // Remove markdown code blocks
-        return cleanedText;
+        const text = await response.text();
+        
+        // Log the raw response for debugging
+        console.log("gemini response ", text);
+        
+        // Extract JSON from code blocks if present
+        let cleanedText = text;
+        const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+        if (jsonMatch && jsonMatch[1]) {
+            cleanedText = jsonMatch[1].trim();
+        } else {
+            cleanedText = text.replace(/```json\n?|```/g, "").trim();
+        }
+        
+        // Try to repair JSON if needed
+        try {
+            // First check if it's already valid JSON
+            JSON.parse(cleanedText);
+            return cleanedText;
+        } catch (error) {
+            console.log("JSON parsing failed, attempting repair:", error.message);
+            
+            // Use Gemini to repair the JSON
+            try {
+                const repairedJson = await this.repairJsonWithGemini(cleanedText);
+                return repairedJson;
+            } catch (repairError) {
+                console.log("Gemini repair failed:", repairError.message);
+                // Return the original cleaned text and let editCode handle it
+                return cleanedText;
+            }
+        }
     }
-
 
     async generateCode(prompt, context) {
         const structuredPrompt = this.generateCodePrompt(prompt, context);
@@ -224,34 +253,45 @@ class GeminiService {
       Now, **ONLY** return the JSON object, without extra text or formatting.
       `;
       }
-
-    async editCode(prompt, context) {
+    
+      async editCode(prompt, context) {
         const structuredPrompt = this.editorPrompt(prompt, context);
         try {
             let cleanedText = await this.chatGemini(prompt, context, structuredPrompt);
-    
-            // Parse the JSON response safely
+            
+            // Try parsing JSON
             let jsonResponse;
             try {
                 jsonResponse = JSON.parse(cleanedText);
-            } catch (jsonError) {
-                throw new Error(`Gemini API returned invalid JSON: ${jsonError.message}`);
+                console.log("\n \n Respone parsed \n\n ")
+            } catch (error) {
+                console.log("\n" + error.message + "\n \n");
+                console.log("JSON parsing failed after all repair attempts");
+                
+                // If we're still having issues, try jsonrepair as a last resort
+                try {
+                    console.log("Trying jsonrepair as last resort...");
+                    jsonResponse = JSON.parse(jsonrepair(cleanedText));
+                } catch (repairError) {
+                    throw new Error(`All JSON repair methods failed: ${repairError.message}`);
+                }
             }
-    
-            // Ensure required fields exist
+            
+            console.log("JSON:", jsonResponse);
             if (!jsonResponse.correct_code || !jsonResponse.explanation) {
                 throw new Error("Gemini API response is missing required fields (correct_code or explanation).");
             }
-    
-            const correctCode = jsonResponse.correct_code;
-            const explanation = jsonResponse.explanation;
-    
-            return { correct_code: correctCode, explanation: explanation };
+            
+            console.log("\n \n Reached return \n \n");
+            return { 
+                correct_code:  jsonResponse.correct_code,
+                explanation: jsonResponse.explanation 
+            };
         } catch (error) {
             throw new Error(`Gemini API Error: ${error.message}`);
         }
     }
-
+    
     testCodePrompt(userPrompt, context) {
         // Validating the context
         if (!context || !context.language || !context.fileType) {
@@ -351,7 +391,132 @@ sys.path.append(parent_dir)`;
         }
     }
     
-
+    async repairJsonWithGemini(jsonText) {
+        try {
+            // First try direct parsing
+            JSON.parse(jsonText);
+            return jsonText; // JSON is already valid
+        } catch (error) {
+            console.log("JSON has errors, attempting repair:", error.message);
+            
+            // We'll use a two-step process:
+            // 1. Get the code content separately 
+            // 2. Properly format it into JSON
+            
+            // Step 1: Ask Gemini for just the cleaned-up code
+            const codePrompt = `
+    I have some malformed code that needs to be fixed. Return ONLY the corrected code without any JSON formatting, markdown, or explanations:
+    
+    ${jsonText}
+    `;
+            
+            let codeContent = "";
+            try {
+                const codeResult = await this.model.generateContent(codePrompt);
+                const codeResponse = await codeResult.response;
+                codeContent = await codeResponse.text();
+                
+                // Clean up any markdown code blocks
+                const codeBlockMatch = codeContent.match(/```(?:\w+)?\s*([\s\S]*?)\s*```/);
+                if (codeBlockMatch && codeBlockMatch[1]) {
+                    codeContent = codeBlockMatch[1].trim();
+                } else {
+                    codeContent = codeContent.trim();
+                }
+                
+                console.log("Extracted code content:", codeContent.substring(0, 100) + "...");
+            } catch (codeError) {
+                console.log("Error getting code from Gemini:", codeError);
+                codeContent = "// Failed to repair code";
+            }
+            
+            // Step 2: Manually create a properly escaped JSON structure
+            if (codeContent) {
+                try {
+                    // Create a proper JSON object
+                    const resultObject = {
+                        correct_code: codeContent,
+                        explanation: ["Code repaired and formatted by AI"]
+                    };
+                    
+                    // Stringify with proper escaping
+                    const jsonString = JSON.stringify(resultObject, null, 2);
+                    
+                    // Validate
+                    try {
+                        const parsed = JSON.parse(jsonString);
+                        if (parsed.correct_code && parsed.correct_code.length > 10) {
+                            console.log("Successfully created valid JSON with code");
+                            return jsonString;
+                        } else {
+                            console.log("JSON valid but code content is too short");
+                        }
+                    } catch (validationError) {
+                        console.log("JSON validation failed:", validationError.message);
+                    }
+                } catch (jsonError) {
+                    console.log("Error creating JSON:", jsonError);
+                }
+            }
+            
+            // Fallback method if the above fails: Get Gemini to create the entire JSON structure
+            const jsonPrompt = `
+    I need a valid JSON object with the following structure:
+    {
+      "correct_code": "...",
+      "explanation": ["..."]
+    }
+    
+    The content should be based on this malformed input:
+    ${jsonText}
+    
+    IMPORTANT:
+    1. The "correct_code" field should contain the properly fixed code
+    2. Ensure all quotes, newlines, and special characters in the code are properly escaped
+    3. Return ONLY the valid JSON object with no additional text, explanations, or markdown
+    `;
+            
+            try {
+                const jsonResult = await this.model.generateContent(jsonPrompt);
+                const jsonResponse = await jsonResult.response;
+                let jsonText = await jsonResponse.text();
+                
+                // Extract JSON if in a code block
+                const jsonMatch = jsonText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+                if (jsonMatch && jsonMatch[1]) {
+                    jsonText = jsonMatch[1].trim();
+                }
+                
+                // Validate
+                try {
+                    const parsed = JSON.parse(jsonText);
+                    if (parsed.correct_code && parsed.explanation) {
+                        console.log("Successfully obtained valid JSON from Gemini");
+                        return jsonText;
+                    }
+                } catch (finalError) {
+                    console.log("Final JSON validation failed:", finalError.message);
+                    
+                    // Last resort - hardcode structure with whatever code we have
+                    const lastResort = JSON.stringify({
+                        correct_code: codeContent || "// Could not repair code",
+                        explanation: ["Best attempt at code repair"]
+                    });
+                    
+                    return lastResort;
+                }
+            } catch (finalGeminiError) {
+                console.log("Final Gemini attempt failed:", finalGeminiError);
+                
+                // Absolute last resort
+                return JSON.stringify({
+                    correct_code: "// Failed to repair code",
+                    explanation: ["Repair process failed"]
+                });
+            }
+        }
+    }
+    
     
 }
 
