@@ -3,7 +3,7 @@
   "displayName": "codeEasy",
   "publisher": "PearlMody",
   "description": "It makes your coding journey easy and more productive.",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "icon": "icon.png",
   "engines": {
     "vscode": "^1.97.0"

@@ -19,7 +19,7 @@ To use codeEasy, follow these steps:
 1. Open Visual Studio Code.
 2. Click on the codeEasy button in the activity bar for prompt based code generation
 3. Select lines of code which you want to edit or where there is potential bug.Right click and choose option of Code Editor (codeEasy) to type prompt or Fix Bugs (codeEasy)
-4.To test python api's or anyother code , right click and choose "Generate Test Cases (codeEasy)" 
+4. To test python api's or anyother code , right click and choose "Generate Test Cases (codeEasy)"
 
 ## Extension Settings
 
